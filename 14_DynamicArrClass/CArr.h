@@ -21,6 +21,23 @@ public:
     void PrintArr();
 
     T& operator [](const int _Index);
+
+    class iterator;
+    iterator begin();
+
+    //inner 클래스는 밖의 클래스가 선언되어도 자동으로 생기지 않기 때문에,
+    //클래스 객체 크기에 영향을 주지 않음
+    class iterator
+    {
+    private:
+        T*      m_pData;
+        int     m_iIdx;
+
+    public:
+        iterator() : m_pData(nullptr), m_iIdx(-1) {}
+        iterator(T* _pData, int _iIdx) : m_pData(_pData), m_iIdx(_iIdx) {}
+        ~iterator() {}
+    };
 };
 
 //클래스탬플릿은 함수들이 cpp파일이 아닌, 헤더파일에 구현되어 있어야 한다
@@ -100,4 +117,12 @@ void CArr<T>::PrintArr()
         std::cout << m_pData[i] << " ";
     }
     std::cout << '\n';
+}
+
+template<typename T>
+//inner클래스가 리턴타입인 경우, typename으로 명시해줌
+typename CArr<T>::iterator CArr<T>::begin()
+{
+    //시작을 가리키는 iterator를 만들어서 반환
+    return iterator(m_pData, 0); //임시객체로 만들어서 반환
 }

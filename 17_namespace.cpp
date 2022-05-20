@@ -60,7 +60,5 @@ int main()
     mycout >> a;
 
     mycout << a << MyEndl << L"한글";
-    
-
     return 0;
 }

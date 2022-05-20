@@ -16,5 +16,13 @@ int main()
 
     b.PrintArr();
 
+    CArr<int> myvector;
+    
+    myvector.PushBack(1);
+    myvector.PushBack(2);
+    myvector.PushBack(3);
+
+    CArr<int>::iterator iter = myvector.begin();
+
     return 0;
 }
