@@ -31,7 +31,6 @@ public:
     //대입연산자 = 를 클래스 CMY의 자료에 맞춰 함수 오버로딩
     CMY& operator =(const CMY& _other)
     {
-        
         m_iPrivate = _other.m_iPrivate;
         m_fPrivate = _other.m_fPrivate;
 

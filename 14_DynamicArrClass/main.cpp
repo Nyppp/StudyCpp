@@ -1,17 +1,20 @@
 #include <iostream>
-#include "CArr.cpp"
+#include "CArr.h"
 
 int main()
 {
-    CArr c = {};
+    //클래스를 탬플릿화 했기에 여러 타입에 대해 대응가능
+    CArr<float> c = {};
+    CArr<int> b = {};
     
 
-    for(int i = 1; i <= 5 ; ++i)
-    {
-        c.PushBack(i);
-    }
+    c.PushBack(5.7f);
+
+    b.PushBack(5);
 
     c.PrintArr();
+
+    b.PrintArr();
 
     return 0;
 }
