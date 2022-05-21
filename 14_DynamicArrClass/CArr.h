@@ -19,24 +19,67 @@ public:
     void PushBack(const T& _iData);
     void Resize(int _iResizeCount);
     void PrintArr();
+    int size() { return m_iCount; }
 
     T& operator [](const int _Index);
 
     class iterator;
     iterator begin();
+    iterator end();
 
     //inner 클래스는 밖의 클래스가 선언되어도 자동으로 생기지 않기 때문에,
-    //클래스 객체 크기에 영향을 주지 않음
+    //클래스 객체 크기에 영향을 주지 않음 + 상위 클래스의 private 멤버에 접근 가능함
     class iterator
     {
     private:
-        T*      m_pData;
-        int     m_iIdx;
+        //반복자는 가변배열에서 메모리 재 할당을 할 때마다, 원본주소와 다른 주소를 가지게 됨
+        //-> 원본 주소가 계속 바뀌기 때문. -> stl 벡터 라이브러리는 메모리를 그대로 쓰는 게 아니라, 메모리가 다르다면 에러를 출력함
+        CArr*   m_pArr;     //반복자가 가리킬 데이터를 관리하는 가변배열 주소
+        T*      m_pData;    //데이터의 시작 주소
+        int     m_iIdx;     //가리키는 데이터의 인덱스
 
     public:
-        iterator() : m_pData(nullptr), m_iIdx(-1) {}
-        iterator(T* _pData, int _iIdx) : m_pData(_pData), m_iIdx(_iIdx) {}
+        iterator() : m_pArr(nullptr), m_pData(nullptr), m_iIdx(-1) {} //인덱스 -1 == end 반복자
+        iterator(CArr* _pArr, T* _pData, int _iIdx) : m_pArr(_pArr),m_pData(_pData), m_iIdx(_iIdx) {}
         ~iterator() {}
+
+    public:
+        //역참조 연산자 오버로딩
+        T& operator * ()
+        {
+            //반복자가 알고있는 주소와 가변배열이 알고있는 주소가 다른 경우, assert
+            //혹은 반복자가 end를 가리키는 경우 assert
+            if (m_pArr->m_pData != m_pData || m_iIdx == -1)
+            {
+                assert(false);
+            }
+            return m_pData[m_iIdx]; //반복자가 가리키는 데이터 시작주소의 iIdx번째를 반환
+        }
+
+        T& operator ++ ()
+        {
+            if(m_iIdx == -1)
+            {
+                assert(false);
+            }
+            return m_pData[++m_iIdx];
+        }
+
+        T& operator -- ()
+        {
+            if(m_iIdx == -1)
+            {
+                m_iIdx = m_pArr->m_iCount
+                return m_pData[m_pArr->m_iCount];
+            }
+
+            else if(m_iIdx == 0)
+            {
+                assert(false);
+            }
+
+            return m_pData[--m_iIdx];
+        }
     };
 };
 
@@ -123,6 +166,16 @@ template<typename T>
 //inner클래스가 리턴타입인 경우, typename으로 명시해줌
 typename CArr<T>::iterator CArr<T>::begin()
 {
+    if(this->m_iCount == 0)
+    {
+        return iterator(this, m_pData, -1); //데이터가 들어간 게 없다면 end반복자 반환
+    }
     //시작을 가리키는 iterator를 만들어서 반환
-    return iterator(m_pData, 0); //임시객체로 만들어서 반환
+    return iterator(this, m_pData, 0); //임시객체로 만들어서 반환
+}
+
+template<typename T>
+typename CArr<T>::iterator CArr<T>::end()
+{
+    return iterator(this, m_pData, -1);
 }
