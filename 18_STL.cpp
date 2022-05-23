@@ -16,10 +16,28 @@ int main()
 
     //벡터도 존재
     vector<int> vecInt;
-    vecInt.push_back(100);
+    for(int i = 10; i > 2; --i)
+    {
+        vecInt.push_back(i);
+    }
 
     vector<int>::iterator vecIter = vecInt.begin();
-    *(++vecIter);
-    *(--vecIter);
+
+    for(; vecIter != vecInt.end();)
+    {
+        if(*vecIter %2 ==0)
+        {
+            vecIter = vecInt.erase(vecIter);
+        }
+        else
+        {
+            ++vecIter;
+        }
+    }
+
+    for(int i = 0; i < vecInt.size(); ++i)
+    {
+        std::cout<<vecInt[i];
+    }
     return 0;
 }

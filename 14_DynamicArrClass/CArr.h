@@ -3,6 +3,8 @@
 #include <iostream>
 #include <assert.h>
 
+//C++ STL 벡터 구현
+
 template<typename T> //클래스 탬플릿
 class CArr
 {
@@ -26,6 +28,12 @@ public:
     class iterator;
     iterator begin();
     iterator end();
+    iterator erase(iterator& iter);
+
+    void clear()
+    {
+        m_iCount = 0;
+    }
 
     //inner 클래스는 밖의 클래스가 선언되어도 자동으로 생기지 않기 때문에,
     //클래스 객체 크기에 영향을 주지 않음 + 상위 클래스의 private 멤버에 접근 가능함
@@ -37,48 +45,113 @@ public:
         CArr*   m_pArr;     //반복자가 가리킬 데이터를 관리하는 가변배열 주소
         T*      m_pData;    //데이터의 시작 주소
         int     m_iIdx;     //가리키는 데이터의 인덱스
+        bool    m_bValid;   //반복자 유효성 체크
 
     public:
-        iterator() : m_pArr(nullptr), m_pData(nullptr), m_iIdx(-1) {} //인덱스 -1 == end 반복자
-        iterator(CArr* _pArr, T* _pData, int _iIdx) : m_pArr(_pArr),m_pData(_pData), m_iIdx(_iIdx) {}
+        iterator() : m_pArr(nullptr), m_pData(nullptr), m_iIdx(-1), m_bValid(false) {} //인덱스 -1 == end 반복자
+        iterator(CArr* _pArr, T* _pData, int _iIdx) : m_pArr(_pArr),m_pData(_pData), m_iIdx(_iIdx), m_bValid(false) 
+        {
+            if(_pArr != nullptr && _iIdx >= 0)
+            {
+                m_bValid = true;
+            }
+        }
         ~iterator() {}
+
+        friend class CArr; //CArr클래스가 iterator의 private 공간에 접근 가능
 
     public:
         //역참조 연산자 오버로딩
         T& operator * ()
         {
             //반복자가 알고있는 주소와 가변배열이 알고있는 주소가 다른 경우, assert
-            //혹은 반복자가 end를 가리키는 경우 assert
-            if (m_pArr->m_pData != m_pData || m_iIdx == -1)
+            //혹은 반복자가 end를 가리키는 경우 assert + 유효한 반복자가 아닌 경우
+            if (m_pArr->m_pData != m_pData || m_iIdx == -1 || m_bValid == false)
             {
                 assert(false);
             }
             return m_pData[m_iIdx]; //반복자가 가리키는 데이터 시작주소의 iIdx번째를 반환
         }
 
-        T& operator ++ ()
+        //++ 전위연산자
+        iterator& operator ++ ()
         {
-            if(m_iIdx == -1)
+            //가변배열의 주소가 바뀌었거나, end 반복자인 경우
+            if (m_pArr->m_pData != m_pData || m_iIdx == -1)
             {
                 assert(false);
             }
-            return m_pData[++m_iIdx];
+
+            //가변배열의 마지막 인덱스를 가리키고 있는 경우
+            if(m_iIdx == m_pArr->m_iCount-1)
+            {
+                //end 반복자로 만듦
+                m_iIdx = -1;
+            }
+
+            else
+            {
+                ++m_iIdx;
+            }
+            return *this;
         }
 
-        T& operator -- ()
+        // 후위연산자 ++
+        iterator operator ++(int)
         {
-            if(m_iIdx == -1)
-            {
-                m_iIdx = m_pArr->m_iCount
-                return m_pData[m_pArr->m_iCount];
-            }
+            iterator Tmp = *this;
 
-            else if(m_iIdx == 0)
+            ++(*this);
+            return Tmp;
+        }
+
+        //-- 전위연산자
+        iterator& operator -- ()
+        {
+            if (m_pArr->m_pData != m_pData || m_iIdx == 0)
             {
                 assert(false);
             }
 
-            return m_pData[--m_iIdx];
+            //end반복자면, 마지막 원소를 가리키게 함
+            if(m_iIdx == -1)
+            {
+                m_iIdx = m_pArr->m_iCount-1;
+            }
+
+            else
+            {
+                --m_iIdx;
+            }
+            return *this;
+        }
+
+        // 후위연산자 --
+        iterator operator --(int)
+        {
+            iterator Tmp = *this;
+
+            --(*this);
+            return Tmp;
+        }
+
+        //비교연산자 ==
+        bool operator == (const iterator& _otherIter)
+        {
+            if( this->m_pData == _otherIter.m_pData && this->m_iIdx == _otherIter.m_iIdx)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        //비교연산자 !=
+        bool operator != (const iterator& _otherIter)
+        {
+            return !(*this == _otherIter);
         }
     };
 };
@@ -117,7 +190,7 @@ void CArr<T>::PushBack(const T& _iData)
 {
     if(m_iMaxCount <= m_iCount)
     {
-        Resize(m_iMaxCount*2);
+        Resize(m_iMaxCount+1);
     }
 
     m_pData[m_iCount++] = _iData;
@@ -178,4 +251,36 @@ template<typename T>
 typename CArr<T>::iterator CArr<T>::end()
 {
     return iterator(this, m_pData, -1);
+}
+
+template<typename T>
+typename CArr<T>::iterator CArr<T>::erase(iterator& _iter)
+{
+    //전혀 다른 배열을 가리키는 경우 혹은 end 반복자인 경우 혹은 배열 크기보다 더 큰 인덱스를 가리키는 경우 예외처리
+    if (_iter.m_pArr != this || end() == _iter || _iter.m_iIdx >= m_iCount)
+    {
+        assert(false);
+    }
+
+    //움직여야 할 횟수를 결정하는 iLoopCount
+    int iLoopCount = (m_iCount - _iter.m_iIdx + 1);
+
+    for(int i = 0; i < iLoopCount; ++i )
+    {
+        //삭제한 원소 기준으로 오른쪽에 있는 원소들을 모두 한칸씩 땅겨옴
+        m_pData[i + _iter.m_iIdx] = m_pData[i + _iter.m_iIdx + 1];   
+    }
+
+    //반환하는 반복자는 현재 값과 인덱스가 맞지 않기에, 유효성 false로 리턴
+    _iter.m_bValid = false;
+
+    //원소 갯수 감소
+    --m_iCount;
+
+    //지운 원소가 마지막 원소였다면, end 반복자 리턴
+    if( _iter.m_iIdx >= m_iCount)
+        return end();
+
+    else
+        return iterator(this, m_pData, _iter.m_iIdx);
 }
