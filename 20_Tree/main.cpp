@@ -12,6 +12,7 @@ using std::set;
 #define MAN 1
 #define WOMAN 2
 
+
 struct tStdInfo
 {
     wchar_t szName[20];
@@ -36,8 +37,38 @@ struct tStdInfo
 //     tStdInfo        second;
 // };
 
+//열거형
+enum class MY_TYPE
+{
+    TYPE_1, //0, 따로 지정하지 않으면 0부터 시작해서 점점 늘어남
+    TYPE_2, //1
+    TYPE_3, //2
+    TYPE_5 = 100, //직접 숫자를 지정할 수도 있으며, 이 다음 열거형은 101이 됨
+    TYPE_6 //101
+};
+
+enum class OTHER_TYPE
+{
+    //TYPE_1 //다른 열거형에 같은 멤버 이름을 넣을수 있음 -> 모호성 발생
+    //이를 방지하기 위해 enum class 나타남 -> 열거체가 어느 클래스 소속인지 명시해야 함.
+    TYPE_1
+};
+
+//enum과 define의 차이
+//define은 전처리기에 해당됨 -> 컴파일 이전에 먼저 실행됨 -> CLASS_1은 CLASS_1으로 인식되지 않고, 그냥 0 그 자체가 됨
+//enum은 컴파일 시에 실행됨 -> TYPE_1이 0 자체가 아니고, TYPE_1으로 보고, 그 값을 대입시켜줌 -> 타입이 잡힘
+#define CLASS_1 0
+#define CLASS_2 1
+
+//define은 코드가 꼬였을 때, 수정이 복잡해지지만 enum은 수정이 편함
+//enum은 디버깅 시, 어떤 타입이며 어느 소속의 열거체인지 알려주기 때문임
+
 int main()
 {
+
+    int a = (int)MY_TYPE::TYPE_3; // a = 2와 동일한 동작
+
+    int b = (int)OTHER_TYPE::TYPE_1; //열거형 클래스는 형변환을 명시해줘야 함
     //이진탐색트리
     //데이터 입력시 O(logN), 탐색효율 O(logN)
     //트리가 한쪽으로 치중된 형태라면, 탐색효율 x -> 자가균형 필요(avl, red-black 등)
@@ -93,18 +124,25 @@ int main()
     //string은 결국 vector<char>와 유사한 동작임. -> 가변배열을 기반으로 한 동작
 
     CBST<int, int> bstint;
-    tPair<int, int> pair;
-    pair.first = 100;
 
-    bstint.insert(pair);
+    bstint.insert(make_bstpair(100,0));
+    bstint.insert(make_bstpair(50,0));
+    bstint.insert(make_bstpair(200,0));
 
-    pair.first = 150;
+    CBST<int, int>::iterator bstiter = bstint.begin();
 
-    bstint.insert(pair);
+    bstiter = bstint.find(50);
 
-    pair.first = 200;
+    tPair<int, int>* pPair;
 
-    bstint.insert(pair);
+    pPair->first;
+    pPair->second;
+
+
+    for(bstiter = bstint.begin(); bstiter != bstint.end(); ++bstiter)
+    {
+        std::cout << bstiter->first << bstiter->second;
+    }
 
     return 0;
 }
