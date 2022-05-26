@@ -100,8 +100,8 @@ public:
 
 public:
     bool insert(const tPair<T1, T2>& _pair);
-    tBSTNode<T1, T2>* GetInOrderSuccessor (const tBSTNode<T1, T2>* _node);
-    tBSTNode<T1, T2>* GetInOrderPredecessor (const tBSTNode<T1, T2>* _node);
+    tBSTNode<T1, T2>* GetInOrderSuccessor(tBSTNode<T1, T2>* _node);
+    tBSTNode<T1, T2>* GetInOrderPredecessor(tBSTNode<T1, T2>* _node);
 
     class iterator;
     iterator begin();
@@ -140,6 +140,8 @@ public:
                 return true;
         }
 
+        
+
         //트리의 경우, 값이 수정되면 구조가 뒤틀리는 문제가 발생하기에 const로 제한
         const tPair<T1, T2> operator *()
         {
@@ -148,7 +150,7 @@ public:
                 assert(false);
             }
 
-            return m_pNode->pair
+            return m_pNode->pair;
         }
 
         const tPair<T1, T2>* operator ->()
@@ -163,7 +165,8 @@ public:
 
         iterator& operator ++()
         {
-            //이터레이터 연산이지만, 트리를 통해 다음 노드가 무엇인지 물어보고, 그것을 가져옴
+            m_pNode = m_pBST->GetInOrderSuccessor(m_pNode);
+            return *this;
         }
 
     friend class CBST;
@@ -287,17 +290,17 @@ bool CBST<T1,T2>::insert(const tPair<T1, T2>& _pair)
 }
 
 template <typename T1, typename T2>
-tBSTNode<T1, T2>* GetInOrderSuccessor (const tBSTNode<T1, T2>* _node)
+tBSTNode<T1, T2>* CBST<T1,T2>::GetInOrderSuccessor(tBSTNode<T1, T2>* _node)
 {
     NODE_TYPE node_type = NODE_TYPE::END;
     tBSTNode<T1, T2>* searchNode;
     
-    //오른쪽 자식노드가 있으면, 거기로 가고(key보다 큰 값)
+    //왼쪽 자식노드가 있으면, 거기로 가고(key보다 큰 값)
     if( _node->arrNode[(int)NODE_TYPE::RCHILD] != nullptr)
     {
         searchNode = _node->arrNode[(int)NODE_TYPE::RCHILD];
 
-        //오른쪽 자식의 왼쪽 자식이 있다면 그 노드로 감(부모와 오른쪽 자식 사이의 key값 탐색)
+        //왼쪽 자식의 오른쪽 자식이 있다면 그 노드로 감(부모와 오른쪽 자식 사이의 key값 탐색)
         while(searchNode->arrNode[(int)NODE_TYPE::LCHILD] != nullptr)
         {
             searchNode = searchNode->arrNode[(int)NODE_TYPE::LCHILD];
@@ -312,7 +315,7 @@ tBSTNode<T1, T2>* GetInOrderSuccessor (const tBSTNode<T1, T2>* _node)
 
         while(true)
         {
-            if(searchNode->IsRoot)
+            if(searchNode->IsRoot())
             {
                 return nullptr;
             }
@@ -333,8 +336,48 @@ tBSTNode<T1, T2>* GetInOrderSuccessor (const tBSTNode<T1, T2>* _node)
 }
 
 template <typename T1, typename T2>
-tBSTNode<T1, T2>* GetInOrderPredecessor (const tBSTNode<T1, T2>* _node)
+tBSTNode<T1, T2>* CBST<T1,T2>::GetInOrderPredecessor (tBSTNode<T1, T2>* _node)
 {
+    NODE_TYPE node_type = NODE_TYPE::END;
+    tBSTNode<T1, T2>* searchNode;
     
-    return; 
+    //오른쪽 자식노드가 있으면, 거기로 가고(key보다 큰 값)
+    if( _node->arrNode[(int)NODE_TYPE::LCHILD] != nullptr)
+    {
+        searchNode = _node->arrNode[(int)NODE_TYPE::LCHILD];
+
+        //오른쪽 자식의 왼쪽 자식이 있다면 그 노드로 감(부모와 오른쪽 자식 사이의 key값 탐색)
+        while(searchNode->arrNode[(int)NODE_TYPE::RCHILD] != nullptr)
+        {
+            searchNode = searchNode->arrNode[(int)NODE_TYPE::RCHILD];
+        }
+    }
+    
+    //없다면, 부모 노드로 이동, 자기보다 큰 부모(자신이 부모의 왼쪽자식일 때 까지)를 찾음
+    else
+    {
+        searchNode = _node;
+
+
+        while(true)
+        {
+            if(searchNode->IsRoot())
+            {
+                return nullptr;
+            }
+            
+            if( searchNode-> IsRightChild() == true)
+            {
+                searchNode = searchNode->arrNode[(int)NODE_TYPE::PARENT];
+                break;
+            }
+            else
+            {
+                searchNode = searchNode->arrNode[(int)NODE_TYPE::PARENT];
+            }
+        }
+        
+    }
+    return searchNode;
 }
+

@@ -141,7 +141,7 @@ int main()
 
     for(bstiter = bstint.begin(); bstiter != bstint.end(); ++bstiter)
     {
-        std::cout << bstiter->first << bstiter->second;
+        std::cout << bstiter->first << " "<< bstiter->second << std::endl;
     }
 
     return 0;
