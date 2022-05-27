@@ -64,7 +64,7 @@ struct tBSTNode
         }
     }
 
-    //부모로부터 자신이 오른쪽 노드인지 반환
+    //부모로부터 자신이 오른쪽 노드인지 여부 반환
     bool IsRightChild()
     {
         if( arrNode[(int)NODE_TYPE::PARENT]->arrNode[(int)NODE_TYPE::RCHILD] == this)
@@ -77,6 +77,31 @@ struct tBSTNode
         }
     }
 
+    //자신의 자식이 없는지 여부 반환
+    bool IsLeaf()
+    {
+        if(arrNode[(int)NODE_TYPE::LCHILD] == nullptr && arrNode[(int)NODE_TYPE::RCHILD] == nullptr)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    //자신의 자식이 2개 있다면 true 반환
+    bool IsFull()
+    {
+        if(arrNode[(int)NODE_TYPE::LCHILD] == nullptr && arrNode[(int)NODE_TYPE::RCHILD] == nullptr)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
 
     //노드 기본 생성자
     tBSTNode() : pair(), arrNode{} {}
@@ -103,11 +128,26 @@ public:
     tBSTNode<T1, T2>* GetInOrderSuccessor(tBSTNode<T1, T2>* _node);
     tBSTNode<T1, T2>* GetInOrderPredecessor(tBSTNode<T1, T2>* _node);
 
+    //트리의 삭제
+    //삭제할 노드가 자식이 없는 경우 -> 그냥 삭제하면 됨
+    //자식이 한개 있는 경우 -> 자식을 바로 올리면 됨
+    //자식이 두개 있는 경우 -> 중위 순회의 우열을 따라서, 중위 선행자나, 중위 후속자가 삭제한 자리에 와야 함
+    //만약 자식이 두개 있는데, 둘중 하나를 삭제한 자리에 올린다면, 중위 서열이 깨지며 트리 구조가 많이 바뀌게 됨
+    //그리고 중위선행자, 후속자 사이에서도 그 둘의 자식노드 여부에 따라 결정됨 -> 그러나 자식이 2개인 노드의 중위 선행자, 후속자는 모두 말단 노드이기 때문에 따로 설계x
+
+
     class iterator;
+public:
     iterator begin();
     iterator end();
     iterator find(const T1& _key);
+    iterator erase(const iterator& _iter);
 
+//노드 삭제를 위해 erase함수만이 내부적으로 따로 호출하기 위해 만든 DeleteNode 함수
+private:
+    tBSTNode<T1, T2>* DeleteNode(tBSTNode<T1, T2>* _node);
+
+public:
     class iterator
     {
     private:
@@ -169,7 +209,7 @@ public:
             return *this;
         }
 
-    friend class CBST;
+        friend class CBST<T1, T2>;
     };
 };
 
@@ -231,6 +271,68 @@ typename CBST<T1,T2>::iterator CBST<T1,T2>::find(const T1& _key)
     return iterator(this, searchNode);
 }
 
+template <typename T1, typename T2>
+typename CBST<T1,T2>::iterator CBST<T1,T2>::erase(const CBST<T1,T2>::iterator& _iter)
+{
+    if(this == _iter.m_pBST)
+    {
+        assert(false);
+    }
+
+    tBSTNode<T1, T2>* pSuccessor = DeleteNode(_iter.m_pNode);
+    return iterator(this, pSuccessor);
+}
+
+template <typename T1, typename T2>
+tBSTNode<T1, T2>* CBST<T1,T2>::DeleteNode(tBSTNode<T1, T2>* _node)
+{
+
+    tBSTNode<T1, T2>* pSuccessor = nullptr;
+
+    //자식이 하나도 없다면, 해당 노드를 그냥 지워버림
+    if (_node->IsLeaf() == true)
+    {
+        // 삭제시킬 노드의 후속자를 찾아둔다 -> 삭제 할 노드가 곧 후속자이기 때문
+        pSuccessor = GetInOrderSuccessor(_node);
+
+        //노드가 한개뿐인 경우
+        if(_node == m_pRoot)
+        {
+            m_pRoot = nullptr;
+        }
+        else
+        {
+            //부모 노드로 접근하여, 삭제할 노드를 가리키는 포인터를 nullptr로 바꿈
+            if(_node->isLeftChild() == true) 
+            {
+                //삭제할 노드가 왼쪽 자식이었을 때
+                _node->arrNode[(int)NODE_TYPE::PARENT]->arrNode[(int)NODE_TYPE::LCHILD] = nullptr;
+            }
+            else
+            {
+                //오른쪽 자식이었을 때
+                _node->arrNode[(int)NODE_TYPE::PARENT]->arrNode[(int)NODE_TYPE::RCHILD] = nullptr;
+            }
+        }
+
+        delete _node;
+    }
+
+    //자식이 2개인 경우
+    else if(_node->IsFull())
+    {
+
+    }
+
+    //자식이 1개인 경우
+    else
+    {
+
+    }
+
+    --m_iCount;
+    return pSuccessor;
+}
 
 template <typename T1, typename T2>
 bool CBST<T1,T2>::insert(const tPair<T1, T2>& _pair)
@@ -288,6 +390,8 @@ bool CBST<T1,T2>::insert(const tPair<T1, T2>& _pair)
     ++m_iCount;
     return true;
 }
+
+
 
 template <typename T1, typename T2>
 tBSTNode<T1, T2>* CBST<T1,T2>::GetInOrderSuccessor(tBSTNode<T1, T2>* _node)
