@@ -126,23 +126,16 @@ int main()
     CBST<int, int> bstint;
 
     bstint.insert(make_bstpair(100,0));
+    bstint.insert(make_bstpair(150,0));
     bstint.insert(make_bstpair(50,0));
-    bstint.insert(make_bstpair(200,0));
+    bstint.insert(make_bstpair(25,0));
+    bstint.insert(make_bstpair(125,0));
+    bstint.insert(make_bstpair(175,0));
 
     CBST<int, int>::iterator bstiter = bstint.begin();
 
-    bstiter = bstint.find(50);
-
-    tPair<int, int>* pPair;
-
-    pPair->first;
-    pPair->second;
-
-
-    for(bstiter = bstint.begin(); bstiter != bstint.end(); ++bstiter)
-    {
-        std::cout << bstiter->first << " "<< bstiter->second << std::endl;
-    }
+    bstiter = bstint.find(100);
+    bstiter = bstint.erase(bstiter);
 
     return 0;
 }

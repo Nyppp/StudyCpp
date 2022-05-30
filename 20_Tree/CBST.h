@@ -93,7 +93,7 @@ struct tBSTNode
     //자신의 자식이 2개 있다면 true 반환
     bool IsFull()
     {
-        if(arrNode[(int)NODE_TYPE::LCHILD] == nullptr && arrNode[(int)NODE_TYPE::RCHILD] == nullptr)
+        if(arrNode[(int)NODE_TYPE::LCHILD] == nullptr || arrNode[(int)NODE_TYPE::RCHILD] == nullptr)
         {
             return false;
         }
@@ -154,7 +154,6 @@ public:
         CBST<T1, T2>*       m_pBST;
         tBSTNode<T1, T2>*   m_pNode; //nullptr인 경우, end() 반복자로 취급
 
-
     public:
         iterator() : m_pBST(nullptr), m_pNode(nullptr) {}
         iterator(CBST<T1, T2>* _pBST, tBSTNode<T1, T2>* _pNode) : m_pBST(_pBST), m_pNode(_pNode) {}
@@ -179,8 +178,6 @@ public:
             else
                 return true;
         }
-
-        
 
         //트리의 경우, 값이 수정되면 구조가 뒤틀리는 문제가 발생하기에 const로 제한
         const tPair<T1, T2> operator *()
@@ -274,7 +271,7 @@ typename CBST<T1,T2>::iterator CBST<T1,T2>::find(const T1& _key)
 template <typename T1, typename T2>
 typename CBST<T1,T2>::iterator CBST<T1,T2>::erase(const CBST<T1,T2>::iterator& _iter)
 {
-    if(this == _iter.m_pBST)
+    if(this != _iter.m_pBST)
     {
         assert(false);
     }
@@ -286,14 +283,12 @@ typename CBST<T1,T2>::iterator CBST<T1,T2>::erase(const CBST<T1,T2>::iterator& _
 template <typename T1, typename T2>
 tBSTNode<T1, T2>* CBST<T1,T2>::DeleteNode(tBSTNode<T1, T2>* _node)
 {
-
-    tBSTNode<T1, T2>* pSuccessor = nullptr;
+    //삭제할 노드의 후속자 노드를 찾는다(반환값)
+    tBSTNode<T1, T2>* pSuccessor = GetInOrderSuccessor(_node);
 
     //자식이 하나도 없다면, 해당 노드를 그냥 지워버림
     if (_node->IsLeaf() == true)
     {
-        // 삭제시킬 노드의 후속자를 찾아둔다 -> 삭제 할 노드가 곧 후속자이기 때문
-        pSuccessor = GetInOrderSuccessor(_node);
 
         //노드가 한개뿐인 경우
         if(_node == m_pRoot)
@@ -303,7 +298,7 @@ tBSTNode<T1, T2>* CBST<T1,T2>::DeleteNode(tBSTNode<T1, T2>* _node)
         else
         {
             //부모 노드로 접근하여, 삭제할 노드를 가리키는 포인터를 nullptr로 바꿈
-            if(_node->isLeftChild() == true) 
+            if(_node->IsLeftChild() == true) 
             {
                 //삭제할 노드가 왼쪽 자식이었을 때
                 _node->arrNode[(int)NODE_TYPE::PARENT]->arrNode[(int)NODE_TYPE::LCHILD] = nullptr;
@@ -316,21 +311,64 @@ tBSTNode<T1, T2>* CBST<T1,T2>::DeleteNode(tBSTNode<T1, T2>* _node)
         }
 
         delete _node;
+        --m_iCount;
     }
 
     //자식이 2개인 경우
-    else if(_node->IsFull())
+    else if(_node->IsFull() == true)
     {
+        //삭제될 자리에 중위 후속자 값을 복사시킴
+        _node->pair = pSuccessor->pair;
 
+        //중위 후속자 노드를 삭제
+        //이 후속자 노드는 절대로 자식이 2개이지 않음 -> 무한 재귀x
+        DeleteNode(pSuccessor);
+
+        //이 경우, 삭제할 노드가 중위 후속자 노드이기 때문에 후속자에 노드를 대입
+        pSuccessor = _node;
     }
 
     //자식이 1개인 경우
     else
     {
+        //자식이 왼쪽, 오른쪽 노드인지 판별
+        NODE_TYPE node_type = NODE_TYPE::LCHILD;
+        if(_node->arrNode[(int)NODE_TYPE::LCHILD] == nullptr)
+        {
+            node_type = NODE_TYPE::RCHILD;
+        }
 
+        //자식 1개를 가진 루트노드를 삭제하는 경우
+        if(_node == m_pRoot)
+        {
+            //루트 노드를 기존 루트노드의 자식으로 변경시킴 -> 기존 루트는 바로 삭제됨
+            m_pRoot = _node->arrNode[(int)node_type];
+           _node->arrNode[(int)node_type]->arrNode[(int)NODE_TYPE::PARENT] = nullptr;
+        }
+        else
+        {
+            //삭제할 노드의 부모와 삭제할 노드의 자식 연결
+            //삭제할 노드가 부모의 왼쪽 자식이면,
+            if(_node->IsLeftChild() == true)
+            {
+                //그 부모노드의 왼쪽 자식은, 삭제할 노드의 자식이 대체함
+                _node->arrNode[(int)NODE_TYPE::PARENT]->arrNode[(int)NODE_TYPE::LCHILD] = _node->arrNode[(int)node_type];
+            }
+            else
+            {
+                //오른쪽인 경우에는, 오른쪽 자식으로 이동시킴
+                _node->arrNode[(int)NODE_TYPE::PARENT]->arrNode[(int)NODE_TYPE::RCHILD] = _node->arrNode[(int)node_type];
+            }
+
+            //자식 노드가 부모의 어느쪽 방향인지 결정했으면, 자식 노드의 부모가 누구인지 다시 지정해줌(삭제할 노드가 부모 공간에 할당되어있기 때문에.)
+            _node->arrNode[(int)node_type]->arrNode[(int)NODE_TYPE::PARENT] = _node->arrNode[(int)NODE_TYPE::PARENT];
+        }
+        
+        //그 후, 삭제할 노드는 현재 모든 연결관계가 끊어졌기에 삭제시킨다.
+        delete _node;
+        --m_iCount;
     }
 
-    --m_iCount;
     return pSuccessor;
 }
 
@@ -390,8 +428,6 @@ bool CBST<T1,T2>::insert(const tPair<T1, T2>& _pair)
     ++m_iCount;
     return true;
 }
-
-
 
 template <typename T1, typename T2>
 tBSTNode<T1, T2>* CBST<T1,T2>::GetInOrderSuccessor(tBSTNode<T1, T2>* _node)
